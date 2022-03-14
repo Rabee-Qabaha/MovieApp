@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using MovieApp.API.Managers;
+using MovieApp.API.RabbitMQ;
 using MovieApp.Core.Interfaces;
 using MovieApp.EF.Data;
 using MovieApp.EF.Repositories;
@@ -18,12 +20,14 @@ b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
 builder.Services.AddScoped<IProducerRepository, ProducerRepository>();
 builder.Services.AddScoped<IActorRepository, ActorRepository>();
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+// RabbitMQ Service
+builder.Services.AddScoped<IMessageProducer,RabbitMQProducer>();
+
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 //or
 //builder.Services.AddAutoMapper(typeof(Program));
-
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

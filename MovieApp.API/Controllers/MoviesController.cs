@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using MovieApp.API.RabbitMQ;
 using MovieApp.Core.DTO.Movie;
 using MovieApp.Core.Interfaces;
 using MovieApp.EF.Data;
@@ -12,13 +13,13 @@ namespace MovieApp.API.Controllers
     {
         private readonly IMovieRepository _movieRepository;
         private readonly IMapper _mapper;
-        //private readonly AppDbContext _context;
+        private readonly IMessageProducer _messagePublisher;
 
-        public MoviesController(IMovieRepository movieRepository, IMapper mapper, AppDbContext context)
+        public MoviesController(IMovieRepository movieRepository, IMapper mapper, AppDbContext context, IMessageProducer messagePublisher)
         {
             _movieRepository = movieRepository;
             _mapper = mapper;
-            //_context = context;
+            _messagePublisher = messagePublisher;
         }
 
 
@@ -68,6 +69,10 @@ namespace MovieApp.API.Controllers
         public async Task<IActionResult> Post(MovieRequestDto dto)
         {
             await _movieRepository.AddNewMovie(dto);
+
+            // Send the Created movie using RabbitMQ
+            _messagePublisher.SendMessage(dto);
+
             return Ok(dto);
         }
         [HttpPut]
@@ -85,8 +90,11 @@ namespace MovieApp.API.Controllers
                 return NotFound();
 
             await _movieRepository.Delete(movie);
-
+           
             var response = _mapper.Map<MovieResponseDto>(movie);
+
+            _messagePublisher.SendMessage(response);
+
             return Ok(response);
         }
     }
